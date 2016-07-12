@@ -47,3 +47,21 @@ GROUP BY Year(FareImplementationDate), BusStopCity
 
 Select * from vw_CityRevenueByYear
 ORDER BY [Year]
+
+--The total cost of buses by Bus type
+GO 
+CREATE VIEW vw_CostByBusType
+AS 
+SELECT Count(BusKey)*BustypePurchasePrice [totalcost], bt.BustypeKey
+FROM Bus b
+join Bustype bt ON b.BusTypekey=bt.BusTypeKey
+GROUP BY bt.BustypeKey, BustypePurchasePrice
+
+--The total revenues per year
+GO
+CREATE VIEW vw_TotalRevenuesByYear
+AS
+SELECT Count(Riders)/*from Ridership*/* Sum(FareAmount)/*from FARE*/ [Revenue], Year(FareImplementationDate)/*from FARE*/ [Year]
+FROM Ridership r 
+join Fare f on r.FareKey=f.FareKey
+GROUP BY Year(FareImplementationDate)
