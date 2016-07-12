@@ -70,14 +70,21 @@ SELECT Count(EmployeeKey) [NumberOfEmployees], PositionKey [PositionKey]
 FROM EmployeePosition
 GROUP BY PositionKey
 
-/*THIS ONE IS THE ONE THAT IS NOT DONE
+--THIS ONE IS THE ONE THAT IS NOT DONE
 
 --The total amount earned by a driver in a year (make it a stored procedure and pass in year and driverKey as parameters)
 GO
 CREATE PROC usp_EarnedByDriver
+@Year DATE
+@DriverKey int
 AS
-SELECT year
-sum(timediff(BusDriverShiftStartTime, BusDriverShiftStopTime))*/
+SELECT year(BusDriverShiftStartTime) [Year],
+sum(DATEDIFF(Hour, BusDriverShiftStartTime, BusDriverShiftStopTime)) * CAST(EmployeeHourlyPayRate as int) 
+FROM BusDriverShift bds
+join BusScheduleAssignment bsa ON bds.BusDriverShiftKey=bsa.BusDriverShiftKey
+join EmployeePosition ep ON bsa.EmployeeKey=ep.EmployeeKey
+Group by [BusDriverShiftStartTime], EmployeeHourlyPayRate
+
 
 
 
