@@ -4,7 +4,7 @@
 
 
 The total amount earned by a driver in a year (make it a stored procedure and pass in year and driverKey as parameters)
-The cost of a bus versus the amount of fares earned by that bus across the three years. (Does the bus pay for itself) pass in the buskey as a parameter.
+
 */
 
 
@@ -70,9 +70,31 @@ SELECT Count(EmployeeKey) [NumberOfEmployees], PositionKey [PositionKey]
 FROM EmployeePosition
 GROUP BY PositionKey
 
+/*THIS ONE IS THE ONE THAT IS NOT DONE
+
 --The total amount earned by a driver in a year (make it a stored procedure and pass in year and driverKey as parameters)
 GO
 CREATE PROC usp_EarnedByDriver
 AS
-SELECT year()
-/*sum(timediff(BusDriverShiftStartTime, BusDriverShiftStopTime))*/
+SELECT year
+sum(timediff(BusDriverShiftStartTime, BusDriverShiftStopTime))*/
+
+
+
+--The cost of a bus versus the amount of fares earned by that bus across the three years. (Does the bus pay for itself) pass in the buskey as a parameter.
+GO
+CREATE PROC usp_BusCostVSFaresEarned
+@BusKey int
+AS
+SELECT /*bsa.BusKey, bt.BusTypeKey, */BustypePurchasePrice [Cost], Count(Riders)/*from Ridership*/* Sum(FareAmount)/*from FARE*/ [Revenue], Year(FareImplementationDate)/*from FARE*/ [Year]
+FROM Bustype bt
+join Bus b ON bt.BusTypekey=b.BusTypeKey
+join BusScheduleAssignment bsa ON b.BusKey=bsa.BusKey 
+join Ridership r ON bsa.BusScheduleAssignmentKey=r.BusScheduleAssigmentKey
+join Fare f ON r.FareKey=f.FareKey
+WHERE bsa.BusKey=@BusKey
+GROUP BY BustypePurchasePrice, FareimplementationDate
+
+EXEC usp_BusCostVSFaresEarned '5'
+
+
