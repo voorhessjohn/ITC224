@@ -34,9 +34,16 @@ WHERE b.BusKey=@BusKey
 EXEC usp_BusSchedule '1'
 
 --The total revenues per city per year
-GO CREATE VIEW vw_CityRevenueByYear
+GO 
+CREATE VIEW vw_CityRevenueByYear
 AS
-SELECT Count(Riders)/*from Ridership*/* Sum(FareAmount)/*from FARE*/ [Revenue], Year(FareImplementationDate)/*from FARE*/, BusStopCity [City]
-FROM Ridership r
+SELECT BusStopCity [City], Count(Riders)/*from Ridership*/* Sum(FareAmount)/*from FARE*/ [Revenue], Year(FareImplementationDate)/*from FARE*/ [Year]
+FROM BusStop bs
+join BusRouteStops brs on bs.BusStopKey=brs.BusStopKey
+join BusScheduleAssignment bsa on brs.BusRouteKey=bsa.BusRouteKey
+join Ridership r on bsa.BusScheduleAssignmentKey=r.BusScheduleAssigmentKey
 join Fare f on r.FareKey=f.FareKey
-GROUP BY Year(FareImplementationDate)
+GROUP BY Year(FareImplementationDate), BusStopCity
+
+Select * from vw_CityRevenueByYear
+ORDER BY [Year]
