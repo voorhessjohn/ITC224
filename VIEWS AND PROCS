@@ -1,11 +1,7 @@
 --group by busbarn, count number of busses
 
 /*
-A summary of how many buses are assigned to each bus barn
-A schedule for a particular bus (do this as a stored procedure where the buskey can be passed as a parameter. This will simply be a schedule of the stops not the times since somehow that table didn't get populated.)
-The total revenues per city per year
-The total cost of buses by Bus type
-The total revenues per year
+
 The count of employees by position
 The total amount earned by a driver in a year (make it a stored procedure and pass in year and driverKey as parameters)
 The cost of a bus versus the amount of fares earned by that bus across the three years. (Does the bus pay for itself) pass in the buskey as a parameter.
@@ -65,3 +61,12 @@ SELECT Count(Riders)/*from Ridership*/* Sum(FareAmount)/*from FARE*/ [Revenue], 
 FROM Ridership r 
 join Fare f on r.FareKey=f.FareKey
 GROUP BY Year(FareImplementationDate)
+
+--The count of employees by position
+GO 
+CREATE VIEW vw_EmployeesByPosition
+AS
+SELECT Count(EmployeeKey) [NumberOfEmployees], PositionKey [PositionKey]
+FROM EmployeePosition
+GROUP BY PositionKey
+
