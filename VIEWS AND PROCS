@@ -75,14 +75,14 @@ GROUP BY PositionKey
 --The total amount earned by a driver in a year (make it a stored procedure and pass in year and driverKey as parameters)
 GO
 CREATE PROC usp_EarnedByDriver
-@Year DATE
+@Year DATE,
 @DriverKey int
 AS
-SELECT year(BusDriverShiftStartTime) [Year],
-sum(DATEDIFF(Hour, BusDriverShiftStartTime, BusDriverShiftStopTime)) * CAST(EmployeeHourlyPayRate as int) 
+SELECT sum(DATEDIFF(Hour, BusDriverShiftStartTime, BusDriverShiftStopTime)) * EmployeeHourlyPayRate
 FROM BusDriverShift bds
 join BusScheduleAssignment bsa ON bds.BusDriverShiftKey=bsa.BusDriverShiftKey
 join EmployeePosition ep ON bsa.EmployeeKey=ep.EmployeeKey
+Where @Year=Year(BusDriverShiftStartTime) and @DriverKey=ep.EmployeeKey
 Group by [BusDriverShiftStartTime], EmployeeHourlyPayRate
 
 
@@ -103,5 +103,3 @@ WHERE bsa.BusKey=@BusKey
 GROUP BY BustypePurchasePrice, FareimplementationDate
 
 EXEC usp_BusCostVSFaresEarned '5'
-
-
