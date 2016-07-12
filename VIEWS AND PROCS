@@ -2,7 +2,7 @@
 
 /*
 
-The count of employees by position
+
 The total amount earned by a driver in a year (make it a stored procedure and pass in year and driverKey as parameters)
 The cost of a bus versus the amount of fares earned by that bus across the three years. (Does the bus pay for itself) pass in the buskey as a parameter.
 */
@@ -70,3 +70,9 @@ SELECT Count(EmployeeKey) [NumberOfEmployees], PositionKey [PositionKey]
 FROM EmployeePosition
 GROUP BY PositionKey
 
+--The total amount earned by a driver in a year (make it a stored procedure and pass in year and driverKey as parameters)
+GO
+CREATE PROC usp_EarnedByDriver
+AS
+SELECT year()
+/*sum(timediff(BusDriverShiftStartTime, BusDriverShiftStopTime))*/
