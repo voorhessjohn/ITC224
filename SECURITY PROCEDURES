@@ -1,0 +1,141 @@
+/*
+ITC 224 Assignment Security Procedures
+Followed along in class
+
+I already have a manager schema, so I will not be making one.
+*/
+
+--Create Schema ManagementSchema
+
+--Procedure that allows the manager to update
+USE MetroAlt
+
+CREATE PROC ManagementSchema.usp_UpdateEmployee
+@EmployeeKey int, 
+@EmployeeLastName nvarchar(255), 
+@EmployeeFirstName nvarchar(255), 
+@EmployeeAddress nvarchar(255), 
+@EmployeeCity nvarchar(255), 
+@EmployeeZipCode nchar(5), 
+@EmployeePhone nchar(10), 
+@EmployeeEmail nchar(255), 
+@PositionName nvarchar(255),
+@EmployeeHourlyPayRate decimal(5,2),
+@OriginalDatePositionAssigned date,
+@EmployeePositionDateAssigned date
+AS
+DECLARE @PositionKey int
+SELECT @PositionKey = PositionKey 
+FROM Position
+WHERE PositionName = @PositionName
+IF @PositionKey is null
+Begin
+PRINT 'Invalid position'
+RETURN -1
+End
+
+BEGIN TRAN
+BEGIN TRY
+UPDATE Employee
+SET [EmployeeLastName] = @EmployeeLastName,
+[EmployeeFirstName] = @EmployeeFirstName,
+[EmployeeAddress] = @EmployeeAddress,
+[EmployeeCity] = @EmployeeCity,
+[EmployeeZipCode] = @EmployeeZipCode,
+[EmployeePhone] = @EmployeePhone,
+[EmployeeEmail] = @EmployeeEmail
+WHERE EmployeeKey = @EmployeeKey
+
+Update EmployeePosition
+SET [PositionKey] = @PositionKey,
+[EmployeeHourlyPayRate] = @EmployeeHourlyPayRate,
+[EmployeePositionDateAssigned] = @EmployeePositionDateAssigned
+WHERE EmployeeKey = @EmployeeKey 
+and EmployeePositionDateAssigned = @OriginalDatePositionAssigned 
+
+COMMIT TRAN
+END TRY
+BEGIN CATCH
+ROLLBACK TRAN
+PRINT error_Message()
+RETURN -2
+END CATCH
+
+SELECT * FROM EmployeePosition
+
+EXEC ManagementSchema.usp_UpdateEmployee
+@EmployeeKey = 1, 
+@EmployeeLastName = 'Sommers', 
+@EmployeeFirstName = 'Susanne', 
+@EmployeeAddress = '28 Elm Ave.', 
+@EmployeeCity = 'Seattle', 
+@EmployeeZipCode = '98100', 
+@EmployeePhone = '2065554312', 
+@EmployeeEmail = 'SUSANNE.SOMMERS17@Hotmail.com', 
+@PositionName = 'Lawyer', 
+@EmployeeHourlyPayRate = 100.00, 
+@OriginalDatePositionAssigned = '4/14/1998', 
+@EmployeePositionDateAssigned = '7/28/2016'
+
+--add driver to a route for the day
+GO
+CREATE PROC ManagementSchema.usp_AssignShift
+@BusDriverShiftKey int, 
+@EmployeeKey int, 
+@BusRouteKey int, 
+@BusScheduleAssignmentDate date, 
+@BusKey int
+AS
+BEGIN TRAN
+BEGIN TRY
+INSERT INTO BusScheduleAssignment (
+BusDriverShiftKey, 
+EmployeeKey, 
+BusRouteKey, 
+BusScheduleAssignmentDate, 
+BusKey)
+VALUES(
+@BusDriverShiftKey, 
+@EmployeeKey, 
+@BusRouteKey, 
+@BusScheduleAssignmentDate, 
+@BusKey)
+
+COMMIT TRAN
+END TRY
+BEGIN CATCH
+ROLLBACK TRAN
+PRINT error_message()
+RETURN -1
+END CATCH
+
+EXEC ManagementSchema.usp_AssignShift
+@BusDriverShiftKey=2, 
+@EmployeeKey=6,
+@BusRouteKey=127, 
+@BusScheduleAssignmentDate='7/29/2016', 
+@BusKey=43
+
+SELECT * FROM BusScheduleAssignment
+WHERE BusScheduleAssignmentDate = '7/29/2016'
+
+--Stored procedure to return how many hours an employee worked between two dates
+GO
+CREATE PROC ManagementSchema.usp_TotalHoursDateRange
+@EmployeeKey int,
+@StartDate date,
+@EndDate date
+AS
+SELECT EmployeeKey, sum(DateDiff(hour, BusDriverShiftStartTime, BusDriverShiftStopTime)) [Total Hours]
+FROM BusDriverShift bs
+inner join BusScheduleAssignment bsa
+ON bs.BusDriverShiftKey=bsa.BusDriverShiftKey
+WHERE
+EmployeeKey=@EmployeeKey
+AND BusScheduleAssignmentDate between @StartDate and @EndDate
+Group by EmployeeKey
+
+EXEC ManagementSchema.usp_TotalHoursDateRange
+@EmployeeKey=6,
+@StartDate='6/1/2014',
+@EndDate='6/8/2014'
