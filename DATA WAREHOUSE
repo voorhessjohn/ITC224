@@ -1,0 +1,154 @@
+USE master
+
+go
+
+if exists	
+	(SELECT name from sys.databases
+	where name = 'Community_AssistDW')
+Begin
+Drop database Community_AssistDW
+End
+Go
+CREATE DATABASE Community_AssistDW
+Go
+USE Community_AssistDW
+GO
+--create the dimension tables
+Create Table DimEmployee
+(
+	DimEmployeeKey int identity (1,1),
+	EmployeeKey int,
+	EmployeeHireDate date,
+	EmployeeAnnualSalary money,
+	PositionName nvarchar(255)
+)
+GO
+CREATE TABLE DimClient
+(
+	DimClientKey int identity(1,1),
+	PersonKey int,
+	PersonAddressZip nvarchar(255),
+	PersonDateEntered DateTime
+)
+Go
+CREATE TABLE DimGrantType
+(
+	DimGrantTypeKey int identity(1,1),
+	GrantTypeKey int,
+	GrantTypeName nvarchar(255),
+)
+GO
+CREATE TABLE DimGrant
+(
+	DimGrantKey int identity(1,1),
+	GrantKey int
+)
+GO
+CREATE TABLE DimDate
+(
+	DimDateKey int identity (1,1),
+	GrantReviewDate datetime,
+	GrantYear int,
+	GrantMonth int
+)
+
+
+GO
+CREATE TABLE FactGrant
+(
+	DimEmployeeKey int not null, --fact table primary key is a composite of all dim table primary keys
+	DimClientKey int not null,
+	DimGrantTypeKey int not null,
+	DimGrantKey int not null,
+	DimDateKey int not null,
+	GrantRequestAmount money,
+	GrantAllocationAmount money
+) 
+
+Alter Table DimEmployee
+Add constraint pk_DimEmployee primary key (DimEmployeeKey)
+
+Alter Table DimClient
+Add constraint pk_DimClient primary key (DimClientKey)
+
+Alter table DimGrantType
+Add constraint pk_DimGrantType primary key (DimGrantTypeKey)
+
+Alter Table DimGrant
+Add constraint pk_DimGrant primary key (DimGrantKey)
+
+Alter Table DimDate
+Add constraint pk_DimDate primary key (DimDateKey)
+
+Alter Table FactGrant
+Add constraint pk_FactGrant primary key (DimEmployeeKey, DimClientKey, DimGrantTypeKey, DimGrantKey, DimDateKey)
+
+Alter Table FactGrant
+Add Constraint fk_Employee foreign key (DimEmployeeKey)
+references DimEmployee(DimEmployeeKey)
+
+Alter Table FactGrant
+Add Constraint fk_Client foreign key (DimClientKey)
+references DimClient(DimClientKey)
+
+Alter Table FactGrant
+Add Constraint fk_grantType foreign key (DimGrantTypeKey)
+references DimGrantType(DimGrantTypeKey)
+
+Alter Table FactGrant
+Add Constraint fk_Grant foreign key (DimGrantKey)
+references Dimgrant(DimGrantKey)
+
+Alter Table FactGrant
+Add Constraint fk_Date foreign key (DimDateKey)
+references DimDate(DimDateKey)
+
+Insert into DimEmployee(EmployeeKey, EmployeeHireDate, EmployeeAnnualSalary, PositionName)
+select e.EmployeeKey, EmployeeHireDate, EmployeeAnnualSalary, PositionName
+From Community_Assist.dbo.Employee e
+inner join Community_Assist.dbo.EmployeePosition ep
+on e.EmployeeKey=ep.EmployeeKey
+inner Join Community_Assist.dbo.Position p
+on p.PositionKey=ep.PositionKey
+
+select * from DimEmployee
+
+Insert into DimClient(PersonKey, PersonAddressZip, PersonDateEntered)
+select distinct p.PersonKey, PersonAddressZip, PersonEntryDate
+From Community_Assist.dbo.Person p
+inner join Community_Assist.dbo.PersonAddress pa
+on p.PersonKey=pa.PersonKey
+inner join Community_Assist.dbo.GrantRequest gr
+on p.PersonKey=gr.PersonKey
+
+Insert into DimGrantType(GrantTypeKey, GrantTypeName)
+select GrantTypeKey, GrantTypeName
+from Community_Assist.dbo.GrantType
+
+Select * from DimGrantType
+
+Insert into DimDate(GrantReviewDate, GrantYear, GrantMonth)
+select GrantReviewDate, year(GrantReviewDate), month(GrantReviewDate)
+from Community_Assist.dbo.GrantReview
+
+Select * from DimDate
+
+Insert into DimGrant(GrantKey)
+select GrantRequestKey 
+from Community_Assist.dbo.GrantRequest
+
+Insert into FactGrant(DimEmployeeKey, DimClientKey, DimGrantTypeKey, DimGrantKey, DimDateKey, GrantRequestAmount, GrantAllocationAmount)
+Select DimEmployeeKey, DimClientKey, DimGrantTypeKey, DimGrantKey, DimDateKey, GrantRequestAmount, GrantAllocationAmount
+from DimClient dc
+inner join Community_Assist.dbo.GrantRequest gr
+on dc.PersonKey=gr.PersonKey
+inner join DimGrant dg
+on dg.GrantKey=gr.GrantRequestKey
+inner join DimGrantType dgt
+on dgt.GrantTypeKey=gr.GrantTypeKey
+inner join Community_Assist.dbo.GrantReview rev
+on rev.GrantRequestKey=gr.GrantRequestKey
+inner join DimEmployee de
+on de.EmployeeKey=rev.EmployeeKey
+inner join DimDate dd
+on dd.GrantReviewDate=rev.GrantReviewDate
