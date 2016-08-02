@@ -137,6 +137,8 @@ Insert into DimGrant(GrantKey)
 select GrantRequestKey 
 from Community_Assist.dbo.GrantRequest
 
+/*this last part isn't working
+
 Insert into FactGrant(DimEmployeeKey, DimClientKey, DimGrantTypeKey, DimGrantKey, DimDateKey, GrantRequestAmount, GrantAllocationAmount)
 Select DimEmployeeKey, DimClientKey, DimGrantTypeKey, DimGrantKey, DimDateKey, GrantRequestAmount, GrantAllocationAmount
 from DimClient dc
@@ -152,3 +154,4 @@ inner join DimEmployee de
 on de.EmployeeKey=rev.EmployeeKey
 inner join DimDate dd
 on dd.GrantReviewDate=rev.GrantReviewDate
+*/
