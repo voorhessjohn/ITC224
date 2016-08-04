@@ -113,13 +113,20 @@ on p.PositionKey=ep.PositionKey
 
 select * from DimEmployee
 
-Insert into DimClient(PersonKey, PersonAddressZip, PersonDateEntered)
-select distinct p.PersonKey, PersonAddressZip, PersonEntryDate
-From Community_Assist.dbo.Person p
-inner join Community_Assist.dbo.PersonAddress pa
-on p.PersonKey=pa.PersonKey
-inner join Community_Assist.dbo.GrantRequest gr
-on p.PersonKey=gr.PersonKey
+--Insert into DimClient(PersonKey, PersonAddressZip, PersonDateEntered)
+--select distinct p.PersonKey, PersonAddressZip, PersonEntryDate
+--From Community_Assist.dbo.Person p
+--inner join Community_Assist.dbo.PersonAddress pa
+--on p.PersonKey=pa.PersonKey
+--inner join Community_Assist.dbo.GrantRequest gr
+--on p.PersonKey=gr.PersonKey
+
+INSERT INTO DimClient(PersonKey,PersonAddressZip,PersonDateEntered)
+	SELECT p.PersonKey, PersonAddressZip, PersonEntryDate FROM Community_Assist.dbo.Person p
+	INNER JOIN (SELECT MIN(PersonAddressKey) PersonAddressKey, PersonKey FROM Community_Assist.dbo.PersonAddress GROUP BY PersonKey) mpk ON p.PersonKey = mpk.PersonKey
+	INNER JOIN Community_Assist.dbo.PersonAddress pa ON mpk.PersonAddressKey = pa.PersonAddressKey
+	WHERE p.PersonKey IN (SELECT PersonKey FROM Community_Assist.dbo.GrantRequest)
+
 
 Insert into DimGrantType(GrantTypeKey, GrantTypeName)
 select GrantTypeKey, GrantTypeName
@@ -128,7 +135,7 @@ from Community_Assist.dbo.GrantType
 Select * from DimGrantType
 
 Insert into DimDate(GrantReviewDate, GrantYear, GrantMonth)
-select GrantReviewDate, year(GrantReviewDate), month(GrantReviewDate)
+select Distinct GrantReviewDate, year(GrantReviewDate), month(GrantReviewDate)
 from Community_Assist.dbo.GrantReview
 
 Select * from DimDate
@@ -137,21 +144,33 @@ Insert into DimGrant(GrantKey)
 select GrantRequestKey 
 from Community_Assist.dbo.GrantRequest
 
-/*this last part isn't working
+--Insert into FactGrant(DimEmployeeKey, DimClientKey, DimGrantTypeKey, DimGrantKey, DimDateKey, GrantRequestAmount, GrantAllocationAmount)
+--Select DimEmployeeKey, DimClientKey, DimGrantTypeKey, DimGrantKey, DimDateKey, GrantRequestAmount, GrantAllocationAmount
+--from DimClient dc
+--inner join Community_Assist.dbo.GrantRequest gr
+--on dc.PersonKey=gr.PersonKey
+--inner join DimGrant dg
+--on dg.GrantKey=gr.GrantRequestKey
+--inner join DimGrantType dgt
+--on dgt.GrantTypeKey=gr.GrantTypeKey
+--inner join Community_Assist.dbo.GrantReview rev
+--on rev.GrantRequestKey=gr.GrantRequestKey
+--inner join DimEmployee de
+--on de.EmployeeKey=rev.EmployeeKey
+--inner join DimDate dd
+--on dd.GrantReviewDate=rev.GrantReviewDate
 
-Insert into FactGrant(DimEmployeeKey, DimClientKey, DimGrantTypeKey, DimGrantKey, DimDateKey, GrantRequestAmount, GrantAllocationAmount)
-Select DimEmployeeKey, DimClientKey, DimGrantTypeKey, DimGrantKey, DimDateKey, GrantRequestAmount, GrantAllocationAmount
-from DimClient dc
-inner join Community_Assist.dbo.GrantRequest gr
-on dc.PersonKey=gr.PersonKey
-inner join DimGrant dg
-on dg.GrantKey=gr.GrantRequestKey
-inner join DimGrantType dgt
-on dgt.GrantTypeKey=gr.GrantTypeKey
-inner join Community_Assist.dbo.GrantReview rev
-on rev.GrantRequestKey=gr.GrantRequestKey
-inner join DimEmployee de
-on de.EmployeeKey=rev.EmployeeKey
-inner join DimDate dd
-on dd.GrantReviewDate=rev.GrantReviewDate
-*/
+INSERT INTO FactGrant(DimEmployeeKey, DimClientKey, DimGrantTypeKey, DimGrantKey, DimDateKey, GrantRequestAmount, GrantAllocationAmount)
+	SELECT DimEmployeeKey, DimClientKey, DimGrantTypeKey, DimGrantKey, DimDateKey, GrantRequestAmount, GrantAllocationAmount
+	FROM DimClient dc
+
+	INNER JOIN Community_Assist.dbo.GrantRequest greq ON dc.PersonKey = greq.PersonKey
+	INNER JOIN Community_Assist.dbo.Person p ON dc.PersonKey = p.PersonKey
+	INNER JOIN Community_Assist.dbo.GrantReview  grev ON greq.GrantRequestKey = grev.GrantRequestKey
+	INNER JOIN DimGrantType dgt ON greq.GrantTypeKey = dgt.GrantTypeKey
+	INNER JOIN DimGrant dg ON dg.GrantKey = greq.GrantRequestKey
+	INNER JOIN Community_Assist.dbo.Employee e ON grev.EmployeeKey = e.EmployeeKey	
+	INNER JOIN DimEmployee de ON e.EmployeeKey = de.EmployeeKey
+	INNER JOIN DimDate dd ON grev.GrantReviewDate = dd.GrantReviewDate
+
+Select * from FactGrant
