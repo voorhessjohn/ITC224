@@ -23,6 +23,7 @@ Create Table DimEmployee
 	PositionName nvarchar(255)
 )
 GO
+
 CREATE TABLE DimClient
 (
 	DimClientKey int identity(1,1),
@@ -37,6 +38,7 @@ CREATE TABLE DimGrantType
 	GrantTypeKey int,
 	GrantTypeName nvarchar(255),
 )
+
 GO
 CREATE TABLE DimGrant
 (
@@ -111,7 +113,7 @@ on e.EmployeeKey=ep.EmployeeKey
 inner Join Community_Assist.dbo.Position p
 on p.PositionKey=ep.PositionKey
 
-select * from DimEmployee
+
 
 --Insert into DimClient(PersonKey, PersonAddressZip, PersonDateEntered)
 --select distinct p.PersonKey, PersonAddressZip, PersonEntryDate
@@ -132,13 +134,13 @@ Insert into DimGrantType(GrantTypeKey, GrantTypeName)
 select GrantTypeKey, GrantTypeName
 from Community_Assist.dbo.GrantType
 
-Select * from DimGrantType
+
 
 Insert into DimDate(GrantReviewDate, GrantYear, GrantMonth)
 select Distinct GrantReviewDate, year(GrantReviewDate), month(GrantReviewDate)
 from Community_Assist.dbo.GrantReview
 
-Select * from DimDate
+
 
 Insert into DimGrant(GrantKey)
 select GrantRequestKey 
@@ -173,4 +175,4 @@ INSERT INTO FactGrant(DimEmployeeKey, DimClientKey, DimGrantTypeKey, DimGrantKey
 	INNER JOIN DimEmployee de ON e.EmployeeKey = de.EmployeeKey
 	INNER JOIN DimDate dd ON grev.GrantReviewDate = dd.GrantReviewDate
 
-Select * from FactGrant
+
